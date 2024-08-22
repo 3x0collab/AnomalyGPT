@@ -1,72 +1,89 @@
-GET_SPF=""" select ricaStmpMailServer,ricaStmpMailPort,ricaStmpMailUser,ricaStmpMailPassword,ricaStmpMailAddress,ricaAppsId,ricaReleaseNo
-     from rica_spf 
-     where ricaSpfId='{lang}-SYSTEM' """
+
+GET_SCENARIO="""
+        select ricaRuleId,
+    ricaRule,
+    ricaTypeId,
+    ricaSubTypeId,
+    ricaRequestor,
+    ricaPurpose,
+    ricaIntervalOf,
+    ricaRunMode,
+    ricaWeekly,
+    ricaMonthly,
+    ricaQuarterly,
+    ricaYearly,
+    ricaLastRunDate,
+    ricaLastRunTime,
+    ricaNextRunDate,
+    ricaNextRunTime,
+    ricaImplications,
+    ricaGroupBy,
+    ricaRespondent,
+    ricaInvestigator,
+    ricaOwner,
+    ricaNextOwner,
+    ricaEnforcer,
+    ricaModality,
+    ricaTotalPerBatch,
+    ricaSuggestedRisk,
+    ricaLikelihood,
+    ricaConsequence,
+    ricaPriority,
+    ricaDescription,
+    ricaNotifyBeforeDue,
+ 
+    ricaRespondentOverdueTime,
+    ricaInvestigatorOverdueTime,
+    ricaOwnerOverdueTime,
+    ricaRespondentOverdueRepeat,
+    ricaInvestigatorOverdueRepeat,
+    ricaOwnerOverdueRepeat, 
+    
+    ricaOverdueRiskMatrix,
+    ricaOverduePriority,
+    ricaAutoClose,
+    ricaAutoStatus,
+    ricaCloseAfter,
+    ricaCloseRisk,
+    ricaCreateAlert,
+    ricaRunStatus,
+    ricaStatusReason,
+    ricaStatusDate,
+    ricaStatusTime,
+     ricaQueryPanel,
+     ricaMapper,
+    ricaStatusInitiator from rica_prompt_builders
+        Where ricaRuleId = '{scenario}'
+        """
+
+GET_BRANCH_1 =""" 
+        select DISTINCT RICABRANCHCODE,RICABRANCHNAME from rica_journalentries 
+               where CONCAT(RICASPECIALDATE,RICASPECIALTIME) >= '{v_lastrundate}{v_lastruntime}' 
+            """
+
+GET_BRANCH_1KEYSTONE =""" 
+SELECT DISTINCT 
+(CASE WHEN (SELECT RICACOMPANYCODE FROM RICA.RICA_T24_USER WHERE RICARECORDID = A.RICAINPUTTER) IN ('NG0010001', 'ALL') 
+THEN (SELECT DISTINCT TO_CHAR(H.RICADEPTCODE) FROM RICA.RICA_T24HEAD_OFFICE_USERS H WHERE TO_CHAR(H.RICAPHBUSERGROUP) IN (SELECT DISTINCT TO_CHAR(U.RICAPHBUSERGROUP) FROM RICA.RICA_T24_USER U WHERE U.RICARECORDID = A.RICAINPUTTER)) 
+ELSE TO_CHAR(A.RICABRANCHCODE) END) AS RICABRANCHCODE,
+
+(select ricaBranchName from RICA.rica_branch where TO_CHAR(ricaBranchId) = (CASE WHEN (SELECT RICACOMPANYCODE FROM RICA.RICA_T24_USER WHERE RICARECORDID = A.RICAINPUTTER) IN ('NG0010001', 'ALL') 
+THEN (SELECT DISTINCT TO_CHAR(H.RICADEPTCODE) FROM RICA.RICA_T24HEAD_OFFICE_USERS H WHERE TO_CHAR(H.RICAPHBUSERGROUP) IN (SELECT DISTINCT TO_CHAR(U.RICAPHBUSERGROUP) FROM RICA.RICA_T24_USER U WHERE U.RICARECORDID = A.RICAINPUTTER)) 
+ELSE TO_CHAR(A.RICABRANCHCODE) END) ) AS RICABRANCHNAME 
+FROM rica_journalentries A
+               WHERE CONCAT(A.RICASPECIALDATE,A.RICASPECIALTIME) >= '{v_lastrundate}{v_lastruntime}' 
+            """
+
+GET_BRANCH_2 = """ 
+            select DISTINCT RICA{group_field.upper()} as {group_field} from rica_journalentries 
+              WHERE CONCAT(A.RICASPECIALDATE,A.RICASPECIALTIME) >= '{v_lastrundate}{v_lastruntime}' 
+        """
 
 
 
 
-get_customer_account=""" 
+GET_DIS_ACCOUNT_1 =""" 
+           select DISTINCT RICAACCOUNTID from rica_journalentries 
+               where CONCAT(RICASPECIALDATE,RICASPECIALTIME) >= '{v_lastrundate}{v_lastruntime}' 
+            """
 
-    SELECT RICAACCOUNTID 
-    FROM RICA_JOURNALENTRIES
-       where CONCAT(RICASPECIALDATE,RICASPECIALTIME) >= '{last_run_date}{last_run_time}'  
-     
-
- """
-
-
-get_customer_data_query=""" 
-  SELECT DISTINCT C1.RICATRANSID,
-                C1.RICAENTRYSERIALNO,
-                C1.RICATRANSREFID,
-                C1.RICABRANCHCODE,
-                CAST(C1.RICANARRATIVE AS VARCHAR(400)) AS RICANARRATIVE,
-                C1.RICAENTRYDATE,
-                C1.RICAINPUTTER,
-                C1.RICAAUTHORISER,
-                C1.RICAVALUEDATE,
-                C1.RICATRANSMODE,
-                C1.RICALCYCODE,
-                C1.RICALCYAMOUNT,
-                C1.RICALCYAMOUNT as CR_AMOUNT,
-                C2.RICALCYAMOUNT as DR_AMOUNT,
-                C1.RICAFCYCODE,
-                C1.RICAFCYAMOUNT,
-                C1.RICARATE,
-                C1.RICATRANSTYPE,
-                C1.RICATRANSCODE as CREDIT_INDICATOR,
-                C1.RICAACCOUNTID as CREDIT_ACCOUNT,
-                C2.RICATRANSCODE AS DEBIT_INDICATOR,
-                C2.RICAACCOUNTID as DEBIT_ACCOUNT
-FROM (
-    SELECT *
-    FROM RICA_JOURNALENTRIES
-       where CONCAT(RICASPECIALDATE,RICASPECIALTIME) >= '{last_run_date}{last_run_time}'  
-      AND ricatranscode = 'C' 
-      and ricaaccountid='{account_id}'
-) C1
-LEFT JOIN (
-    SELECT *
-    FROM RICA_JOURNALENTRIES
-         where CONCAT(RICASPECIALDATE,RICASPECIALTIME) >= '{last_run_date}{last_run_time}'  
-      AND ricatranscode = 'D' 
-        and ricaaccountid='{account_id}'
-) C2
-ON C1.RICALCYAMOUNT = C2.RICALCYAMOUNT
-   AND C1.RICAVALUEDATE = C2.RICAVALUEDATE
-   AND C1.RICATRANSID = C2.RICATRANSID
-
-
-
- """
-
-get_all_customer_data_query=""" 
-
-select DISTINCT ricaaccountid   from RICA_JOURNALENTRIES 
-
- """
-
-
-
-GET_PARAMETER=""" select ricaName, ricaValue from rica_parameter 
-where LOWER(ricaName) = 'anomalygpt receiver'  """

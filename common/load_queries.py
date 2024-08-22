@@ -1,5 +1,5 @@
-from SNow.common import common_query
-from SNow.main import get_env_settings
+from AnomalyPromptGRP.common import common_query
+from AnomalyPromptGRP.func import get_env_settings
 
 
 
@@ -17,7 +17,7 @@ def get(query_name):
 	db_type = str(env_settings.get('DATABASE_TYPE'))
 
 	if db_type.lower() == "mssql":
-		from SNow.common import mssql
+		from AnomalyPromptGRP.common import mssql
 		try:
 			query = module_to_dict(mssql)[query_name]  
 		except Exception as e:
@@ -26,7 +26,7 @@ def get(query_name):
 
 
 	elif db_type.lower() == "mysql":
-		from SNow.common import mysql
+		from AnomalyPromptGRP.common import mysql
 		try:
 			query = module_to_dict(mysql)[query_name]  
 		except Exception as e:
@@ -34,7 +34,7 @@ def get(query_name):
 		return query
 
 	else:
-		from SNow.common import oracle 
+		from AnomalyPromptGRP.common import oracle 
 		try:
 			query = module_to_dict(oracle)[query_name] 
 		except Exception as e:
